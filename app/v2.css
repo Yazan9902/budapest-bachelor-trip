@@ -295,10 +295,11 @@ button:focus-visible,a:focus-visible,summary:focus-visible {outline:3px solid #8
 .bottom-nav button.active {color:#fff; }
 .bottom-nav button.nav-primary.active {background:#3157e5; color:#fff; box-shadow:0 3px 10px #3157e538; }
 .day-picker {top:0; margin:0 -4px 18px; padding:8px 4px 12px; background:linear-gradient(180deg,#fbf8f1 80%,#fbf8f100); }
-.day-picker button {min-height:86px; border-color:#e1ddea; background:#fffdf8; }
-.day-picker button > small {color:#625d6d; }
-.day-picker button.selected {background:linear-gradient(145deg,#3157e5,#5138a9); color:#e8ecff; border-color:#3157e5; box-shadow:0 6px 16px #3157e52b; }
-.day-picker button.selected strong,.day-picker button.selected small {color:#fff; }
+.day-picker button {min-height:86px; border-color:#dce3fb; background:#eef1ff; color:#6474aa; }
+.day-picker button > strong {color:#3157e5; }
+.day-picker button > small {color:#6474aa; }
+.day-picker button.selected {background:#dfe6ff; color:#5269bd; border-color:#aebcf2; box-shadow:0 5px 12px #3157e514; }
+.day-picker button.selected strong,.day-picker button.selected small {color:#2447c7; }
 .timeline-row[open] .timeline-copy > strong {color:#3157e5; }
 .day-overview-card {margin-bottom:14px; padding:13px 15px 12px; border:1px solid rgb(206 211 239 / 62%); border-radius:16px; background:linear-gradient(135deg,rgb(248 247 255 / 62%),rgb(238 241 255 / 56%)); }
 .day-overview-card .schedule-heading {margin-top:0; }
@@ -353,11 +354,11 @@ button:focus-visible,a:focus-visible,summary:focus-visible {outline:3px solid #8
 .feature-next > span:nth-child(2) {font-size:.95rem; font-weight:600; line-height:1.4; }
 .feature-next > svg {color:#a63f29; }
 .home-day-strip {margin:12px 0 10px; gap:7px; }
-.home-day-strip button {border-color:#d8dff8; background:#f4f6ff; color:#2749c7; transition:background 150ms ease,border-color 150ms ease,box-shadow 150ms ease,transform 150ms ease; }
-.home-day-strip button span {color:#5a6daf; }
-.home-day-strip button strong {color:#2749c7; }
-.home-day-strip button.focus-day {border-color:#3157e5; background:linear-gradient(145deg,#3157e5,#5138a9); color:#fff; box-shadow:0 5px 12px #3157e526; }
-.home-day-strip button.focus-day span,.home-day-strip button.focus-day strong {color:#fff; }
+.home-day-strip button {border-color:#dce3fb; background:#eef1ff; color:#3157e5; transition:background 150ms ease,border-color 150ms ease,box-shadow 150ms ease,transform 150ms ease; }
+.home-day-strip button span {color:#6474aa; }
+.home-day-strip button strong {color:#3157e5; }
+.home-day-strip button.focus-day {border-color:#aebcf2; background:#dfe6ff; color:#2447c7; box-shadow:0 5px 12px #3157e514; }
+.home-day-strip button.focus-day span,.home-day-strip button.focus-day strong {color:#2447c7; }
 .compact-heading {margin-bottom:12px; }
 .quick-card {padding:16px; border-radius:18px; }
 .quick-icon {width:38px; height:38px; border-radius:12px; margin:0; }
@@ -366,10 +367,9 @@ button:focus-visible,a:focus-visible,summary:focus-visible {outline:3px solid #8
 .address-card {overflow:hidden; min-height:178px; isolation:isolate; }
 .address-card::before {position:absolute; inset:0 0 auto; height:4px; background:#3157e5; content:''; opacity:.85; }
 .address-card-top {display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:20px; }
+.address-card-label {color:#5369bd; font-size:.75rem; font-weight:650; letter-spacing:.04em; text-transform:uppercase; }
 .address-actions {display:flex; align-items:center; gap:7px; }
-.address-actions button,.address-actions a {display:grid; place-items:center; width:44px; height:44px; padding:0; border:1px solid #dedff0; border-radius:13px; background:#fffdf8bf; color:#3157e5; cursor:pointer; text-decoration:none; }
-.address-actions svg {width:17px; height:17px; }
-.address-card > small {display:block; margin-bottom:5px; color:#625d67; font-size:.75rem; }
+.address-actions button,.address-actions a {display:grid; place-items:center; min-width:54px; height:44px; padding:0 10px; border:1px solid #cbd5fa; border-radius:12px; background:#dfe6ff; color:#2447c7; cursor:pointer; font-size:.8rem; font-weight:650; text-decoration:none; }
 .address-card > strong {display:block; color:#1e1836; font-size:1rem; font-weight:650; letter-spacing:-.03em; line-height:1.3; }
 .address-card address {margin-top:6px; color:#625d67; font-size:.75rem; font-style:normal; line-height:1.4; }
 .apartment-address-card {background:linear-gradient(145deg,#f4f9df,#edf4ce); }
@@ -383,11 +383,11 @@ button:focus-visible,a:focus-visible,summary:focus-visible {outline:3px solid #8
 .travel-shortcuts .shortcut-pair button:last-child {padding-left:14px; }
 .home-day-strip button:active,.quick-card:active,.schedule-feature:active {transform:scale(.985); }
 @media (hover:hover) {
-  .home-day-strip button:not(.focus-day):hover {background:#e9edff; border-color:#bfc9f3; }
+  .home-day-strip button:not(.focus-day):hover {background:#e5eaff; border-color:#bfc9f3; }
   .quick-card:hover {border-color:#b7a6cc; }
-  .address-actions button:hover,.address-actions a:hover {background:#fff; border-color:#b8c4f2; }
+  .address-actions button:hover,.address-actions a:hover {background:#d5dfff; border-color:#aebcf2; }
   .travel-shortcuts button:hover {background:#f5f1fb; }
-  .day-picker button:not(.selected):hover {background:#eef1ff; border-color:#cdd5fb; }
+  .day-picker button:not(.selected):hover {background:#e5eaff; border-color:#c5cff4; }
 }
 @media (min-width:760px) {
   .quick-section {padding-top:0; }
@@ -461,11 +461,15 @@ button:focus-visible,a:focus-visible,summary:focus-visible {outline:3px solid #8
   .hero-identity h1 {font-size:2.2rem; }
   .hero-identity > p {font-size:.75rem; }
   .hero-identity .countdown-pill {margin-top:14px; }
+  .address-card-top {align-items:flex-start; flex-direction:column; gap:10px; margin-bottom:16px; }
+  .address-actions {width:100%; }
+  .address-actions button,.address-actions a {flex:1; }
   .next-timeline-row {margin-inline:-16px; padding-inline:16px; }
 }
 @media (max-width:359px) {
   .home-masthead {width:calc(100% - 28px); padding:16px; min-height:200px; }
   .hero-identity h1 {font-size:2rem; }
   .home-masthead .share-top {width:38px; height:38px; }
+  .app-panel[aria-labelledby="essentials-heading"] .segmented-nav {display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); overflow:visible; }
   .coming-after button {grid-template-columns:78px minmax(0,1fr) 16px; gap:8px; }
 }

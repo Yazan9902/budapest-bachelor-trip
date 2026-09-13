@@ -109,20 +109,20 @@ function SegmentedNav<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    <fieldset className="segmented-nav">
-      <legend className="sr-only">{label}</legend>
+    <div className="segmented-nav" role="tablist" aria-label={label}>
       {options.map((option) => (
         <button
           key={option.id}
           type="button"
-          aria-pressed={value === option.id}
+          role="tab"
+          aria-selected={value === option.id}
           className={value === option.id ? 'active' : ''}
           onClick={() => onChange(option.id)}
         >
           {option.label}
         </button>
       ))}
-    </fieldset>
+    </div>
   );
 }
 
@@ -464,23 +464,23 @@ export default function Home() {
             <div className="quick-grid">
               <article className="quick-card address-card apartment-address-card">
                 <div className="address-card-top">
-                  <span className="quick-icon"><House aria-hidden="true" /></span>
+                  <span className="address-card-label">Home</span>
                   <div className="address-actions">
-                    <button type="button" title="Copy address" onClick={() => copyLocation('Apartment', trip.base.address)} aria-label="Copy apartment address"><Copy aria-hidden="true" /></button>
-                    <a href={trip.base.mapUrl} target="_blank" rel="noreferrer" title="Open in Maps" aria-label="Open apartment in Maps"><Navigation aria-hidden="true" /></a>
+                    <button type="button" title="Copy address" onClick={() => copyLocation('Apartment', trip.base.address)} aria-label="Copy apartment address">Copy</button>
+                    <a href={trip.base.mapUrl} target="_blank" rel="noreferrer" title="Open in Maps" aria-label="Open apartment in Maps">Maps</a>
                   </div>
                 </div>
-                <small>Apartment</small><strong>{trip.base.name}</strong><address>1075 Budapest, Hungary</address>
+                <strong>{trip.base.name}</strong><address>1075 Budapest, Hungary</address>
               </article>
               <article className="quick-card address-card airport-address-card">
                 <div className="address-card-top">
-                  <span className="quick-icon"><Plane aria-hidden="true" /></span>
+                  <span className="address-card-label">Airport</span>
                   <div className="address-actions">
-                    <button type="button" title="Copy address" onClick={() => copyLocation('Airport', `${trip.arrival.airport}, ${trip.arrival.airportAddress}`)} aria-label="Copy airport address"><Copy aria-hidden="true" /></button>
-                    <a href={trip.arrival.mapUrl} target="_blank" rel="noreferrer" title="Open in Maps" aria-label="Open airport in Maps"><Navigation aria-hidden="true" /></a>
+                    <button type="button" title="Copy address" onClick={() => copyLocation('Airport', `${trip.arrival.airport}, ${trip.arrival.airportAddress}`)} aria-label="Copy airport address">Copy</button>
+                    <a href={trip.arrival.mapUrl} target="_blank" rel="noreferrer" title="Open in Maps" aria-label="Open airport in Maps">Maps</a>
                   </div>
                 </div>
-                <small>Airport · BUD</small><strong>Ferenc Liszt Airport</strong><address>{trip.arrival.airportAddress}</address>
+                <strong>Ferenc Liszt Airport</strong><address>BUD · {trip.arrival.airportAddress}</address>
               </article>
             </div>
             <div className="travel-shortcuts" aria-label="Travel details">
@@ -500,9 +500,9 @@ export default function Home() {
         <div className="content-shell app-screen">
           <section className="section-block app-panel" aria-labelledby="timeline-heading">
             <SectionHeading headingId="timeline-heading" kicker="17–21 September" title="Daily schedule" />
-            <div className="day-picker" aria-label="Choose a day">
+            <div className="day-picker" role="tablist" aria-label="Choose a day">
               {trip.days.map((day) => (
-                <button key={day.day} type="button" className={selectedDay.day === day.day ? 'selected' : ''} aria-pressed={selectedDay.day === day.day} aria-label={day.dayLabel} onClick={() => openTripDay(day)}>
+                <button key={day.day} type="button" role="tab" className={selectedDay.day === day.day ? 'selected' : ''} aria-selected={selectedDay.day === day.day} aria-label={day.dayLabel} onClick={() => openTripDay(day)}>
                   <span>{day.dayLabel.slice(0,3)}</span><strong>{day.date.slice(-2)}</strong>
                   <small>{day.day === tripState.activeDay?.day ? 'Today' : `Day ${day.day}`}</small>
                 </button>
@@ -678,7 +678,7 @@ export default function Home() {
           <section className="section-block app-panel" aria-labelledby="essentials-heading">
           <SectionHeading
             headingId="essentials-heading"
-            kicker="Travel details"
+            kicker="Trip info"
             title={infoHeading[infoView]}
             side={<ShieldCheck aria-hidden="true" className="section-icon" />}
           />
