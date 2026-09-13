@@ -300,11 +300,12 @@ button:focus-visible,a:focus-visible,summary:focus-visible {outline:3px solid #8
 .day-picker button.selected {background:linear-gradient(145deg,#3157e5,#5138a9); color:#e8ecff; border-color:#3157e5; box-shadow:0 6px 16px #3157e52b; }
 .day-picker button.selected strong,.day-picker button.selected small {color:#fff; }
 .timeline-row[open] .timeline-copy > strong {color:#3157e5; }
-.day-overview-card {margin-bottom:14px; padding:18px 18px 16px; border:1px solid #dedff0; border-radius:20px; background:linear-gradient(135deg,#f8f7ff,#eef1ff); }
+.day-overview-card {margin-bottom:14px; padding:13px 15px 12px; border:1px solid rgb(206 211 239 / 62%); border-radius:16px; background:linear-gradient(135deg,rgb(248 247 255 / 62%),rgb(238 241 255 / 56%)); }
 .day-overview-card .schedule-heading {margin-top:0; }
-.day-overview-card .section-index {color:#3157e5; }
-.day-overview-card .share-top {background:#fff; border-color:#d9ddf3; color:#3157e5; }
-.day-overview-card .schedule-meta {margin:10px 0 0; flex-wrap:wrap; color:#68637a; }
+.day-overview-card .schedule-heading h3 {margin-top:3px; font-size:1.3rem; font-weight:600; }
+.day-overview-card .section-index {color:#5369bd; opacity:.82; }
+.day-overview-card .share-top {background:rgb(255 255 255 / 62%); border-color:rgb(205 211 239 / 66%); color:#5369bd; box-shadow:none; }
+.day-overview-card .schedule-meta {margin:7px 0 0; flex-wrap:wrap; color:#747184; }
 .timeline-summary .timeline-time {color:#4b3d65; }
 .timeline-details,.place-card-details > p,.option-details p,.booking-details {color:#6d6875; }
 .timeline-row,.place-card-details {border-color:#e7e1ea; }
@@ -352,14 +353,27 @@ button:focus-visible,a:focus-visible,summary:focus-visible {outline:3px solid #8
 .feature-next > span:nth-child(2) {font-size:.95rem; font-weight:600; line-height:1.4; }
 .feature-next > svg {color:#a63f29; }
 .home-day-strip {margin:12px 0 10px; gap:7px; }
-.home-day-strip button {background:#fffdf8; transition:background 150ms ease,transform 150ms ease; }
-.home-day-strip button.focus-day {border-color:#f0bba9; background:var(--day-soft); color:#a63f29; }
-.home-day-strip button.focus-day span {color:#a63f29; }
+.home-day-strip button {border-color:#d8dff8; background:#f4f6ff; color:#2749c7; transition:background 150ms ease,border-color 150ms ease,box-shadow 150ms ease,transform 150ms ease; }
+.home-day-strip button span {color:#5a6daf; }
+.home-day-strip button strong {color:#2749c7; }
+.home-day-strip button.focus-day {border-color:#3157e5; background:linear-gradient(145deg,#3157e5,#5138a9); color:#fff; box-shadow:0 5px 12px #3157e526; }
+.home-day-strip button.focus-day span,.home-day-strip button.focus-day strong {color:#fff; }
 .compact-heading {margin-bottom:12px; }
 .quick-card {padding:16px; border-radius:18px; }
-.quick-icon {width:32px; height:32px; border-radius:10px; margin-bottom:15px; }
+.quick-icon {width:38px; height:38px; border-radius:12px; margin:0; }
 .quick-icon svg {width:17px; height:17px; }
 .quick-arrow {top:20px; right:16px; }
+.address-card {overflow:hidden; min-height:178px; isolation:isolate; }
+.address-card::before {position:absolute; inset:0 0 auto; height:4px; background:#3157e5; content:''; opacity:.85; }
+.address-card-top {display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:20px; }
+.address-actions {display:flex; align-items:center; gap:7px; }
+.address-actions button,.address-actions a {display:grid; place-items:center; width:44px; height:44px; padding:0; border:1px solid #dedff0; border-radius:13px; background:#fffdf8bf; color:#3157e5; cursor:pointer; text-decoration:none; }
+.address-actions svg {width:17px; height:17px; }
+.address-card > small {display:block; margin-bottom:5px; color:#625d67; font-size:.75rem; }
+.address-card > strong {display:block; color:#1e1836; font-size:1rem; font-weight:650; letter-spacing:-.03em; line-height:1.3; }
+.address-card address {margin-top:6px; color:#625d67; font-size:.75rem; font-style:normal; line-height:1.4; }
+.apartment-address-card {background:linear-gradient(145deg,#f4f9df,#edf4ce); }
+.airport-address-card {background:linear-gradient(145deg,#f1f2ff,#e9e8fb); }
 .travel-shortcuts {border:1px solid #e7e1ea; background:#fffdf8; border-radius:18px; margin-top:14px; overflow:hidden; }
 .travel-shortcuts .utility-row {border:0; border-radius:0; margin:0; background:transparent; padding:16px; gap:12px; }
 .travel-shortcuts .utility-icon {background:#eeeaff; }
@@ -369,8 +383,9 @@ button:focus-visible,a:focus-visible,summary:focus-visible {outline:3px solid #8
 .travel-shortcuts .shortcut-pair button:last-child {padding-left:14px; }
 .home-day-strip button:active,.quick-card:active,.schedule-feature:active {transform:scale(.985); }
 @media (hover:hover) {
-  .home-day-strip button:hover {background:var(--day-soft); border-color:#f0bba9; }
+  .home-day-strip button:not(.focus-day):hover {background:#e9edff; border-color:#bfc9f3; }
   .quick-card:hover {border-color:#b7a6cc; }
+  .address-actions button:hover,.address-actions a:hover {background:#fff; border-color:#b8c4f2; }
   .travel-shortcuts button:hover {background:#f5f1fb; }
   .day-picker button:not(.selected):hover {background:#eef1ff; border-color:#cdd5fb; }
 }

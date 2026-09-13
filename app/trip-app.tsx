@@ -344,10 +344,10 @@ export default function Home() {
     navigateTo('essentials', 'essentials/' + view);
   }
 
-  async function copyAddress() {
+  async function copyLocation(label: string, address: string) {
     try {
-      await copyText(trip.base.address);
-      setShareNotice('Apartment address copied');
+      await copyText(address);
+      setShareNotice(`${label} address copied`);
     } catch {
       setShareNotice('Select the address to copy it.');
     }
@@ -460,16 +460,28 @@ export default function Home() {
             </div>
           </section>
           <section className="quick-section" aria-labelledby="quick-heading">
-            <div className="compact-heading"><h2 id="quick-heading">Addresses</h2><span>Open in Maps</span></div>
+            <div className="compact-heading"><h2 id="quick-heading">Addresses</h2><span>Copy or open</span></div>
             <div className="quick-grid">
-              <a className="quick-card" href={trip.base.mapUrl} target="_blank" rel="noreferrer">
-                <span className="quick-icon"><House aria-hidden="true" /></span><Navigation className="quick-arrow" aria-hidden="true" />
-                <small>Apartment</small><strong>{trip.base.name}</strong><span>1075 Budapest</span>
-              </a>
-              <a className="quick-card" href={trip.arrival.mapUrl} target="_blank" rel="noreferrer">
-                <span className="quick-icon"><Plane aria-hidden="true" /></span><Navigation className="quick-arrow" aria-hidden="true" />
-                <small>Airport</small><strong>Budapest · BUD</strong><span>Ferenc Liszt Airport</span>
-              </a>
+              <article className="quick-card address-card apartment-address-card">
+                <div className="address-card-top">
+                  <span className="quick-icon"><House aria-hidden="true" /></span>
+                  <div className="address-actions">
+                    <button type="button" title="Copy address" onClick={() => copyLocation('Apartment', trip.base.address)} aria-label="Copy apartment address"><Copy aria-hidden="true" /></button>
+                    <a href={trip.base.mapUrl} target="_blank" rel="noreferrer" title="Open in Maps" aria-label="Open apartment in Maps"><Navigation aria-hidden="true" /></a>
+                  </div>
+                </div>
+                <small>Apartment</small><strong>{trip.base.name}</strong><address>1075 Budapest, Hungary</address>
+              </article>
+              <article className="quick-card address-card airport-address-card">
+                <div className="address-card-top">
+                  <span className="quick-icon"><Plane aria-hidden="true" /></span>
+                  <div className="address-actions">
+                    <button type="button" title="Copy address" onClick={() => copyLocation('Airport', `${trip.arrival.airport}, ${trip.arrival.airportAddress}`)} aria-label="Copy airport address"><Copy aria-hidden="true" /></button>
+                    <a href={trip.arrival.mapUrl} target="_blank" rel="noreferrer" title="Open in Maps" aria-label="Open airport in Maps"><Navigation aria-hidden="true" /></a>
+                  </div>
+                </div>
+                <small>Airport · BUD</small><strong>Ferenc Liszt Airport</strong><address>{trip.arrival.airportAddress}</address>
+              </article>
             </div>
             <div className="travel-shortcuts" aria-label="Travel details">
             <button className="utility-row" onClick={() => openInfo('travel')}>
@@ -729,7 +741,7 @@ export default function Home() {
                 bookingUrl={trip.base.listingUrl}
                 bookingLabel="Airbnb listing"
               />
-              <button className="copy-address" onClick={copyAddress}><Copy aria-hidden="true" /> Copy address</button>
+              <button className="copy-address" onClick={() => copyLocation('Apartment', trip.base.address)}><Copy aria-hidden="true" /> Copy address</button>
 
               <details className="info-disclosure">
                 <summary>Apartment details <ChevronDown aria-hidden="true" /></summary>
