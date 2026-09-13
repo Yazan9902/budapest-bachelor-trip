@@ -1868,7 +1868,22 @@
   box-shadow: 0 14px 45px rgb(42 31 71 / 18%);
 }
 
-.bottom-nav button { color: #777181; }
+.bottom-nav button { position: relative; color: #777181; }
+.bottom-nav button.nav-primary:not(.active) {
+  background: #eef1ff;
+  color: #3157e5;
+}
+.bottom-nav button.nav-primary::after {
+  position: absolute;
+  top: 0.42rem;
+  left: calc(50% + 0.5rem);
+  width: 0.36rem;
+  height: 0.36rem;
+  border: 2px solid #fffdf8;
+  border-radius: 50%;
+  background: #ff6757;
+  content: '';
+}
 .bottom-nav button.active {
   background: #3157e5;
   color: #ffffff;

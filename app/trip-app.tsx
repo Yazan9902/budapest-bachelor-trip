@@ -396,7 +396,7 @@ export default function Home() {
       <nav className="bottom-nav" aria-label="Trip sections">
         {trip.navigation.map((item) => (
           <button
-            className={activeSection === item.id ? 'active' : ''}
+            className={`${activeSection === item.id ? 'active' : ''}${item.id === 'timeline' ? ' nav-primary' : ''}`.trim()}
             aria-current={activeSection === item.id ? 'page' : undefined}
             key={item.id}
             type="button"
