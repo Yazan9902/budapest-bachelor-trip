@@ -46,7 +46,7 @@ body { background: var(--background); color: var(--foreground); }
 .home-day-strip span {font-size:.75rem; color:#66758a; }
 .home-day-strip strong {font-size:.875rem; font-weight:650; }
 .compact-heading {margin-bottom:14px; align-items:baseline; gap:8px; }
-.compact-heading h2 {font-size:1.15rem; letter-spacing:-.03em; }
+.compact-heading h2 {font-size:1.0625rem; font-weight:600; letter-spacing:-.025em; }
 .compact-heading > span {font-size:.75rem; color:#66758a; }
 .quick-grid {display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 .quick-card {position:relative; display:block; padding:18px; background:white; border:1px solid #e3e8f0; border-radius:20px; color:#18263c; text-decoration:none; }
@@ -260,9 +260,9 @@ button:focus-visible,a:focus-visible,summary:focus-visible {outline:3px solid #8
 /* Original weekend-pass palette, with the v2 layout and spacing preserved. */
 .trip-shell {
   background:
-    radial-gradient(circle at 8% 4%, rgb(255 103 87 / 14%), transparent 22rem),
-    radial-gradient(circle at 96% 16%, rgb(49 87 229 / 11%), transparent 28rem),
-    linear-gradient(180deg, #fbf8f1 0%, #f3eee6 100%);
+    radial-gradient(circle at 8% 4%, rgb(255 103 87 / 7%), transparent 22rem),
+    radial-gradient(circle at 96% 16%, rgb(49 87 229 / 5%), transparent 28rem),
+    linear-gradient(180deg, #fbf8f1 0%, #f7f5f0 100%);
 }
 .wordmark,.section-heading h1,.quick-card,.utility-row,
 .day-picker button > strong,.timeline-copy > strong,
@@ -284,8 +284,6 @@ button:focus-visible,a:focus-visible,summary:focus-visible {outline:3px solid #8
 }
 .feature-top {color:#dffb95; }
 .feature-date,.feature-next small,.feature-next > span:first-child {color:#eeeaff; }
-.quick-card:first-child {background:#f0f6d9; }
-.quick-card:last-child {background:#eeeaff; }
 .quick-icon,.utility-icon {background:#fffdf8; color:#3157e5; }
 .quick-arrow {color:#766c84; }
 .shortcut-pair button {color:#443b55; }
@@ -364,16 +362,15 @@ button:focus-visible,a:focus-visible,summary:focus-visible {outline:3px solid #8
 .quick-icon {width:38px; height:38px; border-radius:12px; margin:0; }
 .quick-icon svg {width:17px; height:17px; }
 .quick-arrow {top:20px; right:16px; }
-.address-card {overflow:hidden; min-height:178px; isolation:isolate; }
-.address-card::before {position:absolute; inset:0 0 auto; height:4px; background:#3157e5; content:''; opacity:.85; }
-.address-card-top {display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:20px; }
-.address-card-label {color:#5369bd; font-size:.75rem; font-weight:650; letter-spacing:.04em; text-transform:uppercase; }
-.address-actions {display:flex; align-items:center; gap:7px; }
-.address-actions button,.address-actions a {display:grid; place-items:center; min-width:54px; height:44px; padding:0 10px; border:1px solid #cbd5fa; border-radius:12px; background:#dfe6ff; color:#2447c7; cursor:pointer; font-size:.8rem; font-weight:650; text-decoration:none; }
-.address-card > strong {display:block; color:#1e1836; font-size:1rem; font-weight:650; letter-spacing:-.03em; line-height:1.3; }
-.address-card address {margin-top:6px; color:#625d67; font-size:.75rem; font-style:normal; line-height:1.4; }
-.apartment-address-card {background:linear-gradient(145deg,#f4f9df,#edf4ce); }
-.airport-address-card {background:linear-gradient(145deg,#f1f2ff,#e9e8fb); }
+.address-card {display:flex; flex-direction:column; overflow:hidden; min-height:196px; border-color:#dce3f2; background:#f0f4fc; box-shadow:0 3px 12px rgb(35 56 100 / 3%); }
+.address-card-top {margin-bottom:10px; }
+.address-card-label {color:#566b9c; font-size:.6875rem; font-weight:650; letter-spacing:.08em; text-transform:uppercase; }
+.address-card-copy {flex:1; padding-bottom:16px; }
+.address-card-copy > strong {display:block; min-height:2.7em; color:#23345b; font-size:1rem; font-weight:600; letter-spacing:-.02em; line-height:1.35; }
+.address-card address {margin-top:7px; color:#5d6b83; font-size:.75rem; font-style:normal; line-height:1.5; text-wrap:pretty; }
+.address-actions {display:flex; align-items:center; gap:8px; width:100%; }
+.address-actions button,.address-actions a {display:grid; flex:1; place-items:center; min-width:0; min-height:44px; padding:0 8px; border:1px solid #d3ddf0; border-radius:10px; background:#ffffffb3; color:#3155b8; cursor:pointer; font-size:.8125rem; font-weight:600; text-decoration:none; }
+.apartment-address-card,.airport-address-card {background:linear-gradient(150deg,#f6f8ff,#edf2fc); }
 .travel-shortcuts {border:1px solid #e7e1ea; background:#fffdf8; border-radius:18px; margin-top:14px; overflow:hidden; }
 .travel-shortcuts .utility-row {border:0; border-radius:0; margin:0; background:transparent; padding:16px; gap:12px; }
 .travel-shortcuts .utility-icon {background:#eeeaff; }
@@ -381,10 +378,11 @@ button:focus-visible,a:focus-visible,summary:focus-visible {outline:3px solid #8
 .travel-shortcuts .shortcut-pair button {padding:8px 0; min-height:52px; }
 .travel-shortcuts .shortcut-pair button:first-child {border-right:1px solid #eee7e2; padding-right:12px; }
 .travel-shortcuts .shortcut-pair button:last-child {padding-left:14px; }
-.home-day-strip button:active,.quick-card:active,.schedule-feature:active {transform:scale(.985); }
+.home-day-strip button:active,.schedule-feature:active {transform:scale(.985); }
+.address-actions button:active,.address-actions a:active {background:#dfe8fb; }
 @media (hover:hover) {
   .home-day-strip button:not(.focus-day):hover {background:#e5eaff; border-color:#bfc9f3; }
-  .quick-card:hover {border-color:#b7a6cc; }
+  .quick-card:hover {border-color:#c5d2eb; }
   .address-actions button:hover,.address-actions a:hover {background:#d5dfff; border-color:#aebcf2; }
   .travel-shortcuts button:hover {background:#f5f1fb; }
   .day-picker button:not(.selected):hover {background:#e5eaff; border-color:#c5cff4; }
@@ -461,9 +459,6 @@ button:focus-visible,a:focus-visible,summary:focus-visible {outline:3px solid #8
   .hero-identity h1 {font-size:2.2rem; }
   .hero-identity > p {font-size:.75rem; }
   .hero-identity .countdown-pill {margin-top:14px; }
-  .address-card-top {align-items:flex-start; flex-direction:column; gap:10px; margin-bottom:16px; }
-  .address-actions {width:100%; }
-  .address-actions button,.address-actions a {flex:1; }
   .next-timeline-row {margin-inline:-16px; padding-inline:16px; }
 }
 @media (max-width:359px) {

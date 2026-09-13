@@ -460,27 +460,31 @@ export default function Home() {
             </div>
           </section>
           <section className="quick-section" aria-labelledby="quick-heading">
-            <div className="compact-heading"><h2 id="quick-heading">Addresses</h2><span>Copy or open</span></div>
+            <div className="compact-heading"><h2 id="quick-heading">Addresses</h2></div>
             <div className="quick-grid">
               <article className="quick-card address-card apartment-address-card">
                 <div className="address-card-top">
                   <span className="address-card-label">Home</span>
+                </div>
+                <div className="address-card-copy">
+                  <strong>{trip.base.name}</strong><address>1075 Budapest, Hungary</address>
+                </div>
                   <div className="address-actions">
                     <button type="button" title="Copy address" onClick={() => copyLocation('Apartment', trip.base.address)} aria-label="Copy apartment address">Copy</button>
                     <a href={trip.base.mapUrl} target="_blank" rel="noreferrer" title="Open in Maps" aria-label="Open apartment in Maps">Maps</a>
                   </div>
-                </div>
-                <strong>{trip.base.name}</strong><address>1075 Budapest, Hungary</address>
               </article>
               <article className="quick-card address-card airport-address-card">
                 <div className="address-card-top">
                   <span className="address-card-label">Airport</span>
+                </div>
+                <div className="address-card-copy">
+                  <strong>Ferenc Liszt Airport</strong><address>{trip.arrival.airportAddress}</address>
+                </div>
                   <div className="address-actions">
                     <button type="button" title="Copy address" onClick={() => copyLocation('Airport', `${trip.arrival.airport}, ${trip.arrival.airportAddress}`)} aria-label="Copy airport address">Copy</button>
                     <a href={trip.arrival.mapUrl} target="_blank" rel="noreferrer" title="Open in Maps" aria-label="Open airport in Maps">Maps</a>
                   </div>
-                </div>
-                <strong>Ferenc Liszt Airport</strong><address>BUD · {trip.arrival.airportAddress}</address>
               </article>
             </div>
             <div className="travel-shortcuts" aria-label="Travel details">
