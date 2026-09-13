@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
-  ArrowRight,
   ArrowUpRight,
   CalendarDays,
+  House,
+  Copy,
   ChevronDown,
   ChevronRight,
   Clock3,
@@ -19,7 +20,6 @@ import {
   ShieldCheck,
   Sparkles,
   TicketCheck,
-  X,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -29,23 +29,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer';
 import { trip, type Place, type StatusTone, type TimelineItem, type TripDay } from './trip-data';
+import { buildSchedule, getBudapestClock, getDefaultDay, getStopDateLabel, getUpcomingStops } from './trip-clock';
 
 const DAY_MS = 86_400_000;
 
 function localDateKey(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return getBudapestClock(date).dateKey;
 }
 
 function getTripState(now = new Date()) {
@@ -84,27 +74,6 @@ function getTripState(now = new Date()) {
   };
 }
 
-function getMinutes(date = new Date()) {
-  return date.getHours() * 60 + date.getMinutes();
-}
-
-function getUpcomingItem(day: TripDay, currentMinutes: number) {
-  let previousMinutes = -1;
-  let dayOffset = 0;
-
-  const scheduled = day.items.map((item) => {
-    const match = item.time.match(/(\d{1,2}):(\d{2})/);
-    if (!match) return { item, minutes: Number.POSITIVE_INFINITY };
-
-    const minutes = Number(match[1]) * 60 + Number(match[2]);
-    if (minutes < previousMinutes && previousMinutes >= 18 * 60) dayOffset = 24 * 60;
-    previousMinutes = minutes;
-    return { item, minutes: minutes + dayOffset };
-  });
-
-  return scheduled.find((entry) => entry.minutes >= currentMinutes)?.item ?? day.items.at(-1)!;
-}
-
 type TripState = ReturnType<typeof getTripState>;
 
 const initialTripState: TripState = {
@@ -120,7 +89,7 @@ function BottomNavIcon({ id }: { id: string }) {
   if (id === 'decisions') return <TicketCheck aria-hidden="true" />;
   if (id === 'highlights') return <MapIcon aria-hidden="true" />;
   if (id === 'essentials') return <Luggage aria-hidden="true" />;
-  return <Sparkles aria-hidden="true" />;
+  return <House aria-hidden="true" />;
 }
 
 type AppView = 'home' | 'timeline' | 'decisions' | 'highlights' | 'essentials';
@@ -140,7 +109,8 @@ function SegmentedNav<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    <div className="segmented-nav" aria-label={label}>
+    <fieldset className="segmented-nav">
+      <legend className="sr-only">{label}</legend>
       {options.map((option) => (
         <button
           key={option.id}
@@ -152,7 +122,7 @@ function SegmentedNav<T extends string>({
           {option.label}
         </button>
       ))}
-    </div>
+    </fieldset>
   );
 }
 
@@ -162,7 +132,15 @@ async function copyText(text: string) {
 }
 
 function StatusBadge({ tone, children }: { tone: StatusTone; children: ReactNode }) {
-  return <Badge className={`status-badge status-${tone}`}>{children}</Badge>;
+  const labels: Record<string, string> = {
+    LOCKED: 'Planned', 'MUST BOOK': 'To book', BOOK: 'To book', RESERVE: 'To book',
+    RECOMMENDED: 'Suggested', 'CHOOSE ONE': 'Choose', 'MUST DECIDE': 'Choose',
+    FLEX: 'Flexible', PROTECTED: 'Reserved time', TARGET: 'Approx.', BUFFER: 'Extra time',
+  };
+  const label = typeof children === 'string'
+    ? labels[children] ?? children.toLowerCase().replace(/^./, (letter) => letter.toUpperCase())
+    : children;
+  return <Badge className={`status-badge status-${tone}`}>{label}</Badge>;
 }
 
 function SectionHeading({
@@ -182,7 +160,7 @@ function SectionHeading({
     <div className="section-heading">
       <div>
         <p className="section-index">{kicker}</p>
-        <h2 id={headingId}>{title}</h2>
+        <h1 id={headingId} tabIndex={-1}>{title}</h1>
         {note ? <p className="section-note">{note}</p> : null}
       </div>
       {side}
@@ -244,14 +222,15 @@ function PlaceCard({ place }: { place: Place }) {
   );
 }
 
-function TimelineRow({ item }: { item: TimelineItem }) {
+function TimelineRow({ item, isNext = false }: { item: TimelineItem; isNext?: boolean }) {
   return (
-    <details className="timeline-row">
+    <details className={`timeline-row${isNext ? ' next-timeline-row' : ''}`}>
       <summary className="timeline-summary">
         <span className="timeline-time"><Clock3 aria-hidden="true" />{item.time}</span>
         <span className="timeline-copy">
           <StatusBadge tone={item.statusTone}>{item.status}</StatusBadge>
           <strong>{item.title}</strong>
+          {isNext ? <span className="next-item-label">Up next</span> : null}
           <span className="timeline-location"><MapPin aria-hidden="true" />{item.location}</span>
         </span>
         <span className="timeline-chevron"><ChevronDown aria-hidden="true" /></span>
@@ -279,19 +258,25 @@ export default function Home() {
   const [guideView, setGuideView] = useState<GuideView>('highlights');
   const [infoView, setInfoView] = useState<InfoView>('travel');
   const [shareNotice, setShareNotice] = useState('');
-  const [currentMinutes, setCurrentMinutes] = useState(-1);
+  const [clockNow, setClockNow] = useState<Date | null>(null);
 
   useEffect(() => {
     const syncClock = () => {
       const now = new Date();
       const nextTripState = getTripState(now);
       setTripState(nextTripState);
-      setCurrentMinutes(getMinutes(now));
+      setClockNow(now);
     };
 
     syncClock();
     const timer = window.setInterval(syncClock, 60_000);
-    return () => window.clearInterval(timer);
+    window.addEventListener('focus', syncClock);
+    document.addEventListener('visibilitychange', syncClock);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', syncClock);
+      document.removeEventListener('visibilitychange', syncClock);
+    };
   }, []);
 
   useEffect(() => {
@@ -305,10 +290,19 @@ export default function Home() {
         return;
       }
 
-      if (dayMatch) {
+      if (dayMatch && trip.days.some((day) => day.day === Number(dayMatch[1]))) {
         setOpenDay(Number(dayMatch[1]));
         setActiveSection('timeline');
         return;
+      }
+
+      if (hash.startsWith('essentials/')) {
+        const target = hash.split('/')[1] as InfoView;
+        if (['travel', 'stay', 'tickets', 'more'].includes(target)) {
+          setInfoView(target);
+          setActiveSection('essentials');
+          return;
+        }
       }
 
       const views: AppView[] = ['home', 'timeline', 'decisions', 'highlights', 'essentials'];
@@ -320,18 +314,44 @@ export default function Home() {
 
     syncFromLocation();
     window.addEventListener('popstate', syncFromLocation);
-    return () => window.removeEventListener('popstate', syncFromLocation);
+    window.addEventListener('hashchange', syncFromLocation);
+    return () => {
+      window.removeEventListener('popstate', syncFromLocation);
+      window.removeEventListener('hashchange', syncFromLocation);
+    };
   }, []);
 
   function navigateTo(view: AppView, hash: string = view) {
+    if (view === 'timeline' && hash === 'timeline') setOpenDay(null);
     setActiveSection(view);
-    window.history.pushState({}, '', `#${hash}`);
+    const nextHash = `#${hash}`;
+    if (window.location.hash !== nextHash) window.history.pushState({}, '', nextHash);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    const headingIds: Record<AppView, string> = {
+      home: 'trip-title', timeline: 'timeline-heading', decisions: 'decisions-heading',
+      highlights: 'highlights-heading', essentials: 'essentials-heading',
+    };
+    window.setTimeout(() => document.getElementById(headingIds[view])?.focus({ preventScroll: true }), 0);
   }
 
   function openTripDay(day: TripDay) {
     setOpenDay(day.day);
     navigateTo('timeline', `day-${day.day}`);
+  }
+
+  function openInfo(view: InfoView) {
+    setInfoView(view);
+    navigateTo('essentials', 'essentials/' + view);
+  }
+
+  async function copyAddress() {
+    try {
+      await copyText(trip.base.address);
+      setShareNotice('Apartment address copied');
+    } catch {
+      setShareNotice('Select the address to copy it.');
+    }
+    window.setTimeout(() => setShareNotice(''), 2800);
   }
 
   async function sharePayload(title: string, text: string, hash = '') {
@@ -357,29 +377,22 @@ export default function Home() {
     return sharePayload(`${day.dayLabel} · ${day.title}`, `${day.dayLabel}: ${plan}`, `#day-${day.day}`);
   }
 
-  const focusDay = tripState.activeDay ?? trip.days[0];
-  const selectedDay = trip.days.find((day) => day.day === openDay);
+  const focusDay = clockNow ? getDefaultDay(trip.days, clockNow) : trip.days[0];
+  const selectedDay = trip.days.find((day) => day.day === openDay) ?? focusDay;
   const spartyDecision = trip.decisions.find((decision) => decision.id === 'sparty-tier');
-  const focusItem = tripState.activeDay
-    ? getUpcomingItem(tripState.activeDay, currentMinutes)
-    : trip.nextUp;
-  const focusDayLabel = tripState.activeDay?.dayLabel ?? trip.nextUp.dayLabel;
-  const focusActionLabel = tripState.phase === 'during'
-    ? "Today's plan"
-    : tripState.phase === 'before'
-      ? 'First day plan'
-      : 'Trip schedule';
+  const upcomingStops = clockNow ? getUpcomingStops(trip.days, clockNow) : buildSchedule(trip.days).slice(0, 3);
+  const nextStop = upcomingStops[0];
   const planHeading = planView === 'decisions'
     ? {
         kicker: 'Plan',
-        title: 'Choices',
+        title: 'Decisions',
       }
     : {
         kicker: 'Plan',
         title: 'Bookings',
       };
   const guideHeading: Record<GuideView, string> = {
-    highlights: 'Highlights',
+    highlights: 'Activities',
     food: 'Food',
     nightlife: 'Nightlife',
     map: 'Map',
@@ -408,133 +421,93 @@ export default function Home() {
         ))}
       </nav>
 
+
+      <header className={`app-masthead${activeSection === 'home' ? ' home-masthead' : ''}`}>
+        {activeSection === 'home' ? <>
+          <div className="budapest-backdrop" style={{backgroundImage:"url('./budapest-hero-v2.webp')"}} aria-hidden="true" />
+          <div className="hero-identity">
+            <p>Bachelor trip</p><h1>Budapest</h1><p>17–21 September 2026</p>
+            <span className="countdown-pill">{!clockNow ? trip.dateLabel : tripState.phase === 'before' ? tripState.value + ' to go' : tripState.phase === 'during' ? `Day ${focusDay.day} of 5` : 'Trip ended'}</span>
+          </div>
+        </> : <button className="wordmark" onClick={() => navigateTo('home')} aria-label="Budapest trip home">
+          <span className="wordmark-icon"><MapPin aria-hidden="true" /></span>
+          <span>Budapest<small>17–21 September 2026</small></span>
+        </button>}
+        <Button variant="outline" size="icon" className="share-top" onClick={() => sharePayload(trip.name, trip.dateLabel)} aria-label="Share trip">
+          <Share2 aria-hidden="true" />
+        </Button>
+      </header>
+
       {activeSection === 'home' ? (
-        <div className="app-screen home-screen">
-          <section className="hero app-hero" aria-labelledby="trip-title">
-            <div className="hero-orbit hero-orbit-one" aria-hidden="true" />
-            <div className="hero-orbit hero-orbit-two" aria-hidden="true" />
-
-            <div className="hero-copy">
-              <span className="app-date">{trip.dateLabel}</span>
-              <h1 id="trip-title">{trip.name}</h1>
+        <div className="content-shell app-screen home-screen">
+          <section className="home-overview" aria-labelledby="trip-title">
+            <h2 className="sr-only" id="trip-title">What’s next</h2>
+            <div className="next-home-panel">
+              {nextStop ? <>
+                <button className="next-stop-card" onClick={() => openTripDay(nextStop.day)}>
+                  <span className="next-stop-label"><Clock3 aria-hidden="true" /> What’s next</span>
+                  <span className="next-stop-top"><span>{getStopDateLabel(nextStop, clockNow)} · Budapest time</span><strong>{nextStop.item.time}</strong></span>
+                  <strong className="next-stop-name">{nextStop.item.title}</strong>
+                  <span className="next-stop-location"><MapPin aria-hidden="true" />{nextStop.item.location}</span>
+                  <span className="next-stop-footer">Open schedule <ChevronRight aria-hidden="true" /></span>
+                </button>
+              </> : <div className="next-empty"><CalendarDays aria-hidden="true" /><h3>No upcoming activities</h3><button onClick={() => navigateTo('timeline')}>Open schedule <ChevronRight aria-hidden="true" /></button></div>}
             </div>
-
-            <div className="status-card">
-              <div>
-                <p>{tripState.eyebrow}</p>
-                <strong>{tripState.value}</strong>
-                <span>{tripState.detail}</span>
-              </div>
-              <span className="status-pulse" aria-hidden="true" />
-            </div>
-
-            <div className="hero-actions" aria-label="Quick actions">
-              <Button className="primary-action" size="lg" onClick={() => openTripDay(focusDay)}>
-                {focusActionLabel} <ArrowRight aria-hidden="true" />
-              </Button>
-              <Button className="icon-action" variant="outline" size="icon-lg" onClick={() => sharePayload(trip.name, `${trip.name} · ${trip.dateLabel}`)} aria-label="Share trip">
-                <Share2 aria-hidden="true" />
-              </Button>
+            <div className="home-day-strip" aria-label="Open a trip day">
+              {trip.days.map((day) => <button key={day.day} className={day.day === focusDay.day ? 'focus-day' : ''} onClick={() => openTripDay(day)} aria-label={`Open ${day.dayLabel}`}>
+                <span>{day.dayLabel.slice(0,3)}</span><strong>{day.date.slice(-2)}</strong>
+              </button>)}
             </div>
           </section>
-
-          <div className="content-shell home-content">
-            <section className="hot-links" aria-labelledby="hot-links-heading">
-              <div className="hot-links-heading">
-                <div>
-                  <span>QUICK ACCESS</span>
-                  <h2 id="hot-links-heading">Hot links</h2>
-                </div>
-                <Sparkles aria-hidden="true" />
-              </div>
-
-              <div className="hot-link-grid">
-                <button className="hot-link-card hot-link-today" type="button" onClick={() => openTripDay(focusDay)}>
-                  <span className="hot-link-icon"><CalendarDays aria-hidden="true" /></span>
-                  <span className="hot-link-copy">
-                    <small>{focusActionLabel}</small>
-                    <strong>{focusDay.title}</strong>
-                    <em>{focusDayLabel} · {focusItem.time} next</em>
-                  </span>
-                  <ArrowRight aria-hidden="true" className="hot-link-arrow" />
-                </button>
-
-                <a className="hot-link-card" href={trip.base.mapUrl} target="_blank" rel="noreferrer">
-                  <span className="hot-link-icon"><Luggage aria-hidden="true" /></span>
-                  <span className="hot-link-copy">
-                    <small>Apartment</small>
-                    <strong>{trip.base.name}</strong>
-                    <em>Budapest 1075 · open in Maps</em>
-                  </span>
-                  <Navigation aria-hidden="true" className="hot-link-arrow" />
-                </a>
-
-                <a className="hot-link-card" href={trip.arrival.mapUrl} target="_blank" rel="noreferrer">
-                  <span className="hot-link-icon"><Plane aria-hidden="true" /></span>
-                  <span className="hot-link-copy">
-                    <small>Airport</small>
-                    <strong>{trip.arrival.airport}</strong>
-                    <em>{trip.arrival.airportAddress}</em>
-                  </span>
-                  <Navigation aria-hidden="true" className="hot-link-arrow" />
-                </a>
-
-                <button className="hot-link-card" type="button" onClick={() => { setInfoView('travel'); navigateTo('essentials'); }}>
-                  <span className="hot-link-icon"><TicketCheck aria-hidden="true" /></span>
-                  <span className="hot-link-copy">
-                    <small>Flights & transfers</small>
-                    <strong>{trip.arrival.time} in · {trip.departure.time} out</strong>
-                    <em>Open all travel details</em>
-                  </span>
-                  <ArrowRight aria-hidden="true" className="hot-link-arrow" />
-                </button>
-              </div>
-            </section>
-
-            <section className="home-now" aria-labelledby="home-now-heading">
-              <div className="compact-heading">
-                <h2 id="home-now-heading">{tripState.phase === 'during' ? 'Today' : 'Next'}</h2>
-                <StatusBadge tone={focusItem.statusTone}>{focusItem.status}</StatusBadge>
-              </div>
-              <article className="next-card">
-                <div className="next-time"><span>{focusDayLabel}</span><strong>{focusItem.time}</strong></div>
-                <div className="next-copy"><h3>{focusItem.title}</h3></div>
-                <LinkActions mapUrl={focusItem.mapUrl} bookingUrl={focusItem.bookingUrl} bookingLabel="Open" compact />
-              </article>
-            </section>
-          </div>
+          <section className="quick-section" aria-labelledby="quick-heading">
+            <div className="compact-heading"><h2 id="quick-heading">Addresses</h2><span>Open in Maps</span></div>
+            <div className="quick-grid">
+              <a className="quick-card" href={trip.base.mapUrl} target="_blank" rel="noreferrer">
+                <span className="quick-icon"><House aria-hidden="true" /></span><Navigation className="quick-arrow" aria-hidden="true" />
+                <small>Apartment</small><strong>{trip.base.name}</strong><span>1075 Budapest</span>
+              </a>
+              <a className="quick-card" href={trip.arrival.mapUrl} target="_blank" rel="noreferrer">
+                <span className="quick-icon"><Plane aria-hidden="true" /></span><Navigation className="quick-arrow" aria-hidden="true" />
+                <small>Airport</small><strong>Budapest · BUD</strong><span>Ferenc Liszt Airport</span>
+              </a>
+            </div>
+            <div className="travel-shortcuts" aria-label="Travel details">
+            <button className="utility-row" onClick={() => openInfo('travel')}>
+              <span className="utility-icon"><Plane aria-hidden="true" /></span><span><strong>Flights & transfers</strong><small>{trip.arrival.time} arrival · {trip.departure.time} departure</small></span><ChevronRight aria-hidden="true" />
+            </button>
+            <div className="shortcut-pair">
+              <button onClick={() => openInfo('stay')}><House aria-hidden="true" /> Apartment <ChevronRight aria-hidden="true" /></button>
+              <button onClick={() => openInfo('tickets')}><TicketCheck aria-hidden="true" /> Tickets <ChevronRight aria-hidden="true" /></button>
+            </div>
+            </div>
+          </section>
         </div>
       ) : null}
 
       {activeSection === 'timeline' ? (
         <div className="content-shell app-screen">
           <section className="section-block app-panel" aria-labelledby="timeline-heading">
-          <SectionHeading
-            headingId="timeline-heading"
-            kicker="Schedule"
-            title="Trip days"
-          />
-
-          <div className="days-stack day-list">
-            {trip.days.map((day) => (
-              <button
-                type="button"
-                key={day.day}
-                className="day-list-card"
-                style={{ '--day-accent': day.accent } as CSSProperties}
-                onClick={() => openTripDay(day)}
-                aria-label={`Open ${day.dayLabel}: ${day.title}`}
-              >
-                <span className="day-status-dot" aria-hidden="true" />
-                <span className="day-list-copy">
-                  <small>{day.dayLabel} · {day.intensity}/10</small>
-                  <strong>{day.title}</strong>
-                </span>
-                <span className="day-list-arrow" aria-hidden="true"><ChevronRight /></span>
-              </button>
-            ))}
-          </div>
-        </section>
+            <SectionHeading headingId="timeline-heading" kicker="17–21 September" title="Daily schedule" />
+            <div className="day-picker" aria-label="Choose a day">
+              {trip.days.map((day) => (
+                <button key={day.day} type="button" className={selectedDay.day === day.day ? 'selected' : ''} aria-pressed={selectedDay.day === day.day} aria-label={day.dayLabel} onClick={() => openTripDay(day)}>
+                  <span>{day.dayLabel.slice(0,3)}</span><strong>{day.date.slice(-2)}</strong>
+                  <small>{day.day === tripState.activeDay?.day ? 'Today' : `Day ${day.day}`}</small>
+                </button>
+              ))}
+            </div>
+            <div className="day-overview-card">
+              <div className="schedule-heading">
+                <div><p className="section-index">Day {selectedDay.day} of {trip.days.length}</p><h3>{selectedDay.title}</h3></div>
+                <Button variant="outline" size="icon" className="share-top" onClick={() => shareDay(selectedDay)} aria-label="Share this day"><Share2 aria-hidden="true" /></Button>
+              </div>
+              <p className="schedule-meta"><CalendarDays aria-hidden="true" /> {selectedDay.dayLabel} <span>·</span> <Clock3 aria-hidden="true" /> Budapest time <span>·</span> {selectedDay.items.length} activities</p>
+            </div>
+            {tripState.activeDay && selectedDay.day !== tripState.activeDay.day ? <button className="back-to-today" onClick={() => navigateTo('timeline')}><CalendarDays aria-hidden="true" /> Back to today</button> : null}
+            <div className="schedule-list" key={selectedDay.day}>
+              {selectedDay.items.map((item) => <TimelineRow item={item} isNext={nextStop?.item === item} key={item.time + item.title} />)}
+            </div>
+          </section>
         </div>
       ) : null}
 
@@ -552,7 +525,7 @@ export default function Home() {
             label="Plan categories"
             value={planView}
             onChange={setPlanView}
-            options={[{ id: 'decisions', label: 'Choices' }, { id: 'bookings', label: 'To book' }]}
+            options={[{ id: 'decisions', label: 'Decisions' }, { id: 'bookings', label: 'To book' }]}
           />
 
           {planView === 'decisions' ? <div className="decision-stack tab-panel">
@@ -632,19 +605,19 @@ export default function Home() {
           <section className="section-block app-panel" aria-labelledby="highlights-heading">
           <SectionHeading
             headingId="highlights-heading"
-            kicker="Guide"
+            kicker="Places"
             title={guideHeading[guideView]}
             side={<Sparkles aria-hidden="true" className="section-icon" />}
           />
 
           <SegmentedNav
-            label="Guide categories"
+            label="Places categories"
             value={guideView}
             onChange={setGuideView}
             options={[
-              { id: 'highlights', label: 'Best of' },
-              { id: 'food', label: 'Eat' },
-              { id: 'nightlife', label: 'Night' },
+              { id: 'highlights', label: 'Activities' },
+              { id: 'food', label: 'Food' },
+              { id: 'nightlife', label: 'Nightlife' },
               { id: 'map', label: 'Map' },
             ]}
           />
@@ -665,11 +638,11 @@ export default function Home() {
             <div className="map-orbit map-orbit-a" aria-hidden="true" />
             <div className="map-orbit map-orbit-b" aria-hidden="true" />
             <div className="map-copy">
-              <span>HOME BASE</span>
+              <span>APARTMENT</span>
               <h3>{trip.base.name}</h3>
               <p>{trip.base.address}</p>
               <a href={trip.base.mapUrl} target="_blank" rel="noreferrer">
-                Open base in Maps <Navigation aria-hidden="true" />
+                Open apartment in Maps <Navigation aria-hidden="true" />
               </a>
             </div>
             <MapPin aria-hidden="true" className="map-pin-hero" />
@@ -693,20 +666,20 @@ export default function Home() {
           <section className="section-block app-panel" aria-labelledby="essentials-heading">
           <SectionHeading
             headingId="essentials-heading"
-            kicker="Trip information"
+            kicker="Travel details"
             title={infoHeading[infoView]}
             side={<ShieldCheck aria-hidden="true" className="section-icon" />}
           />
 
           <SegmentedNav
-            label="Trip information categories"
+            label="Travel categories"
             value={infoView}
-            onChange={setInfoView}
+            onChange={openInfo}
             options={[
               { id: 'travel', label: 'Flights' },
-              { id: 'stay', label: 'Stay' },
+              { id: 'stay', label: 'Apartment' },
               { id: 'tickets', label: 'Tickets' },
-              { id: 'more', label: 'More' },
+              { id: 'more', label: 'Checklist' },
             ]}
           />
 
@@ -714,7 +687,7 @@ export default function Home() {
             <article className="travel-card">
               <Plane aria-hidden="true" />
               <span>ARRIVAL · {trip.arrival.dateLabel}</span>
-              <h3>{trip.arrival.time} · {trip.arrival.airport}</h3>
+              <div className="flight-route"><span>TLV <small>Tel Aviv</small></span><Plane aria-hidden="true" /><span>BUD <small>Budapest</small></span></div><h3>{trip.arrival.time}<small>Arrival · local time</small></h3>
               <p>{trip.arrival.flight}</p>
               <address>{trip.arrival.airportAddress}</address>
               <details className="travel-details">
@@ -728,8 +701,8 @@ export default function Home() {
             <article className="travel-card departure-card">
               <Plane aria-hidden="true" />
               <span>DEPARTURE · {trip.departure.dateLabel}</span>
-              <h3>{trip.departure.time} · {trip.departure.flight}</h3>
-              <p>{trip.departure.airport}</p>
+              <div className="flight-route"><span>BUD <small>Budapest</small></span><Plane aria-hidden="true" /><span>TLV <small>Tel Aviv</small></span></div><h3>{trip.departure.time}<small>Departure · local time</small></h3>
+              <p>{trip.departure.flight}</p>
               <address>{trip.departure.airportAddress}</address>
               <details className="travel-details">
                 <summary>Departure details</summary>
@@ -749,16 +722,17 @@ export default function Home() {
                 <StatusBadge tone="locked">ADDRESS ADDED</StatusBadge>
               </div>
               <Luggage aria-hidden="true" className="stay-icon" />
-              <h3>{trip.base.address}</h3>
+              <h3>{trip.base.name}</h3><address>Budapest, 1075, Hungary</address>
               <p>{trip.base.area}</p>
               <LinkActions
                 mapUrl={trip.base.mapUrl}
                 bookingUrl={trip.base.listingUrl}
                 bookingLabel="Airbnb listing"
               />
+              <button className="copy-address" onClick={copyAddress}><Copy aria-hidden="true" /> Copy address</button>
 
               <details className="info-disclosure">
-                <summary>What we know <ChevronDown aria-hidden="true" /></summary>
+                <summary>Apartment details <ChevronDown aria-hidden="true" /></summary>
                 <ul>
                   <li>{trip.base.address}</li>
                   <li>Rooftop apartment</li>
@@ -769,7 +743,7 @@ export default function Home() {
                 </ul>
               </details>
               <details className="info-disclosure alert-disclosure">
-                <summary>Still needed <ChevronDown aria-hidden="true" /></summary>
+                <summary>Details to confirm <ChevronDown aria-hidden="true" /></summary>
                 <ul>{trip.essentials[0].items.map((item) => <li key={item}>{item}</li>)}</ul>
               </details>
             </article>
@@ -802,7 +776,7 @@ export default function Home() {
               <a className="ticket-link" href="https://spartybooking.com/landing-2026-sep/" target="_blank" rel="noreferrer">
                 Compare tickets <ArrowUpRight aria-hidden="true" />
               </a>
-              <small className="source-status">No purchased ticket or confirmation file is included in the trip source.</small>
+              <small className="source-status">Tickets still need to be purchased.</small>
             </article>
           </div> : null}
 
@@ -840,47 +814,6 @@ export default function Home() {
         </section>
         </div>
       ) : null}
-
-      <Drawer
-        open={Boolean(selectedDay)}
-        onOpenChange={(open) => {
-          if (!open) {
-            setOpenDay(null);
-            if (window.location.hash.startsWith('#day-')) {
-              window.history.replaceState({}, '', '#timeline');
-            }
-          }
-        }}
-        showSwipeHandle
-      >
-        <DrawerContent className="day-drawer">
-          {selectedDay ? (
-            <div className="day-drawer-inner">
-              <DrawerHeader className="day-drawer-header">
-                <div>
-                  <span>{selectedDay.dayLabel} · {selectedDay.intensity}/10</span>
-                  <DrawerTitle>{selectedDay.title}</DrawerTitle>
-                  <DrawerDescription>{selectedDay.summary}</DrawerDescription>
-                </div>
-                <DrawerClose className="day-drawer-close" aria-label="Close day schedule">
-                  <X aria-hidden="true" />
-                </DrawerClose>
-              </DrawerHeader>
-
-              <div className="day-drawer-scroll">
-                <div className="day-drawer-timeline">
-                  {selectedDay.items.map((item) => (
-                    <TimelineRow item={item} key={`${item.time}-${item.title}`} />
-                  ))}
-                </div>
-                <Button variant="outline" className="share-day" onClick={() => shareDay(selectedDay)}>
-                  <Share2 aria-hidden="true" /> Share {selectedDay.dayLabel}
-                </Button>
-              </div>
-            </div>
-          ) : null}
-        </DrawerContent>
-      </Drawer>
 
       {shareNotice ? <output className="share-notice" aria-live="polite">{shareNotice}</output> : null}
     </main>

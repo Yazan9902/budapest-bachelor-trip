@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import './v2.css';
 import { trip } from './trip-data';
 
 const geistSans = Geist({
@@ -29,6 +30,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: `${trip.name} · ${trip.dateLabel}`,
   description: siteDescription,
+  icons: {
+    icon: `${siteUrl}/favicon.svg`,
+  },
   openGraph: {
     title: trip.name,
     description: trip.dateLabel,

@@ -345,7 +345,7 @@
 
 .section-index { color: #929087; }
 
-.section-heading h2 {
+.section-heading h1 {
   max-width: 31rem;
   margin: 0.45rem 0 0;
   font-size: clamp(1.8rem, 8vw, 3.15rem);
