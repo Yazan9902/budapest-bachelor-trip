@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import {
   ArrowUpRight,
   CalendarDays,
@@ -97,6 +97,17 @@ type PlanView = 'decisions' | 'bookings';
 type GuideView = 'highlights' | 'food' | 'nightlife' | 'map';
 type InfoView = 'travel' | 'stay' | 'tickets' | 'more';
 
+function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+  const tabs = Array.from(event.currentTarget.parentElement!.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+  const current = tabs.indexOf(event.currentTarget);
+  const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1
+    : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+  event.preventDefault();
+  tabs[next].focus();
+  tabs[next].click();
+}
+
 function SegmentedNav<T extends string>({
   label,
   value,
@@ -116,6 +127,8 @@ function SegmentedNav<T extends string>({
           type="button"
           role="tab"
           aria-selected={value === option.id}
+          tabIndex={value === option.id ? 0 : -1}
+          onKeyDown={handleTabKeyDown}
           className={value === option.id ? 'active' : ''}
           onClick={() => onChange(option.id)}
         >
@@ -140,7 +153,8 @@ function StatusBadge({ tone, children }: { tone: StatusTone; children: ReactNode
   const label = typeof children === 'string'
     ? labels[children] ?? children.toLowerCase().replace(/^./, (letter) => letter.toUpperCase())
     : children;
-  return <Badge className={`status-badge status-${tone}`}>{label}</Badge>;
+  const displayTone = label === 'Choose' ? 'choice' : label === 'To book' || label === 'Not booked' ? 'core' : tone;
+  return <Badge className={`status-badge status-${displayTone}`}>{label}</Badge>;
 }
 
 function SectionHeading({
@@ -305,9 +319,30 @@ export default function Home() {
         }
       }
 
+      if (hash.startsWith('decisions/')) {
+        const target = hash.split('/')[1] as PlanView;
+        if (['decisions', 'bookings'].includes(target)) {
+          setPlanView(target);
+          setActiveSection('decisions');
+          return;
+        }
+      }
+
+      if (hash.startsWith('highlights/')) {
+        const target = hash.split('/')[1] as GuideView;
+        if (['highlights', 'food', 'nightlife', 'map'].includes(target)) {
+          setGuideView(target);
+          setActiveSection('highlights');
+          return;
+        }
+      }
+
       const views: AppView[] = ['home', 'timeline', 'decisions', 'highlights', 'essentials'];
       if (views.includes(hash as AppView)) {
         setOpenDay(null);
+        if (hash === 'decisions') setPlanView('decisions');
+        if (hash === 'highlights') setGuideView('highlights');
+        if (hash === 'essentials') setInfoView('travel');
         setActiveSection(hash as AppView);
       }
     };
@@ -324,9 +359,12 @@ export default function Home() {
   function navigateTo(view: AppView, hash: string = view) {
     if (view === 'timeline' && hash === 'timeline') setOpenDay(null);
     setActiveSection(view);
-    const nextHash = `#${hash}`;
+    const categoryHash = view === 'decisions' ? `decisions/${planView}`
+      : view === 'highlights' ? `highlights/${guideView}`
+      : view === 'essentials' ? `essentials/${infoView}` : view;
+    const nextHash = `#${hash === view ? categoryHash : hash}`;
     if (window.location.hash !== nextHash) window.history.pushState({}, '', nextHash);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
     const headingIds: Record<AppView, string> = {
       home: 'trip-title', timeline: 'timeline-heading', decisions: 'decisions-heading',
       highlights: 'highlights-heading', essentials: 'essentials-heading',
@@ -339,9 +377,21 @@ export default function Home() {
     navigateTo('timeline', `day-${day.day}`);
   }
 
+  function selectTripDay(day: TripDay) {
+    setOpenDay(day.day);
+    const hash = `#day-${day.day}`;
+    if (window.location.hash !== hash) window.history.pushState({}, '', hash);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
   function openInfo(view: InfoView) {
     setInfoView(view);
     navigateTo('essentials', 'essentials/' + view);
+  }
+
+  function changeCategory(view: AppView, category: string) {
+    const hash = `#${view}/${category}`;
+    if (window.location.hash !== hash) window.history.pushState({}, '', hash);
   }
 
   async function copyLocation(label: string, address: string) {
@@ -441,7 +491,7 @@ export default function Home() {
       {activeSection === 'home' ? (
         <div className="content-shell app-screen home-screen">
           <section className="home-overview" aria-labelledby="trip-title">
-            <h2 className="sr-only" id="trip-title">What’s next</h2>
+            <h2 className="sr-only" id="trip-title" tabIndex={-1}>What’s next</h2>
             <div className="next-home-panel">
               {nextStop ? <>
                 <button className="next-stop-card" onClick={() => openTripDay(nextStop.day)}>
@@ -506,7 +556,7 @@ export default function Home() {
             <SectionHeading headingId="timeline-heading" kicker="17–21 September" title="Daily schedule" />
             <div className="day-picker" role="tablist" aria-label="Choose a day">
               {trip.days.map((day) => (
-                <button key={day.day} type="button" role="tab" className={selectedDay.day === day.day ? 'selected' : ''} aria-selected={selectedDay.day === day.day} aria-label={day.dayLabel} onClick={() => openTripDay(day)}>
+                <button key={day.day} type="button" role="tab" className={selectedDay.day === day.day ? 'selected' : ''} aria-selected={selectedDay.day === day.day} tabIndex={selectedDay.day === day.day ? 0 : -1} onKeyDown={handleTabKeyDown} aria-label={day.dayLabel} onClick={() => selectTripDay(day)}>
                   <span>{day.dayLabel.slice(0,3)}</span><strong>{day.date.slice(-2)}</strong>
                   <small>{day.day === tripState.activeDay?.day ? 'Today' : `Day ${day.day}`}</small>
                 </button>
@@ -517,9 +567,9 @@ export default function Home() {
                 <div><p className="section-index">Day {selectedDay.day} of {trip.days.length}</p><h3>{selectedDay.title}</h3></div>
                 <Button variant="outline" size="icon" className="share-top" onClick={() => shareDay(selectedDay)} aria-label="Share this day"><Share2 aria-hidden="true" /></Button>
               </div>
-              <p className="schedule-meta"><CalendarDays aria-hidden="true" /> {selectedDay.dayLabel} <span>·</span> <Clock3 aria-hidden="true" /> Budapest time <span>·</span> {selectedDay.items.length} activities</p>
+              <p className="schedule-meta"><Clock3 aria-hidden="true" /> Budapest time <span>·</span> {selectedDay.items.length} activities</p>
             </div>
-            {tripState.activeDay && selectedDay.day !== tripState.activeDay.day ? <button className="back-to-today" onClick={() => navigateTo('timeline')}><CalendarDays aria-hidden="true" /> Back to today</button> : null}
+            {tripState.activeDay && selectedDay.day !== focusDay.day ? <button className="back-to-today" onClick={() => navigateTo('timeline')}><CalendarDays aria-hidden="true" /> {focusDay.day === tripState.activeDay.day ? 'Back to today' : 'Back to tonight'}</button> : null}
             <div className="schedule-list" key={selectedDay.day}>
               {selectedDay.items.map((item) => <TimelineRow item={item} isNext={nextStop?.item === item} key={item.time + item.title} />)}
             </div>
@@ -540,7 +590,7 @@ export default function Home() {
           <SegmentedNav
             label="Plan categories"
             value={planView}
-            onChange={setPlanView}
+            onChange={(view) => { setPlanView(view); changeCategory('decisions', view); }}
             options={[{ id: 'decisions', label: 'Decisions' }, { id: 'bookings', label: 'To book' }]}
           />
 
@@ -629,7 +679,7 @@ export default function Home() {
           <SegmentedNav
             label="Places categories"
             value={guideView}
-            onChange={setGuideView}
+            onChange={(view) => { setGuideView(view); changeCategory('highlights', view); }}
             options={[
               { id: 'highlights', label: 'Activities' },
               { id: 'food', label: 'Food' },
@@ -690,7 +740,7 @@ export default function Home() {
           <SegmentedNav
             label="Travel categories"
             value={infoView}
-            onChange={openInfo}
+            onChange={(view) => { setInfoView(view); changeCategory('essentials', view); }}
             options={[
               { id: 'travel', label: 'Flights' },
               { id: 'stay', label: 'Apartment' },
@@ -707,7 +757,7 @@ export default function Home() {
               <p>{trip.arrival.flight}</p>
               <address>{trip.arrival.airportAddress}</address>
               <details className="travel-details">
-                <summary>Transfer details</summary>
+                <summary>Transfer to apartment <ChevronDown aria-hidden="true" /></summary>
                 <small>{trip.arrival.transfer}</small>
               </details>
               <a className="travel-link" href={trip.arrival.mapUrl} target="_blank" rel="noreferrer">
@@ -721,7 +771,7 @@ export default function Home() {
               <p>{trip.departure.flight}</p>
               <address>{trip.departure.airportAddress}</address>
               <details className="travel-details">
-                <summary>Departure details</summary>
+                <summary>When to leave & terminal <ChevronDown aria-hidden="true" /></summary>
                 <small>{trip.departure.terminal}</small>
                 <small>{trip.departure.leaveCity}</small>
               </details>

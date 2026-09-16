@@ -1,4 +1,4 @@
-import TripApp from './trip-app';
+import TripApp from './trip-dashboard';
 
 export const dynamic = 'force-static';
 

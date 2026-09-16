@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import './v2.css';
-import { trip } from './trip-data';
+import { trip } from './trip-data-v11';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -23,7 +23,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#3157e5',
+  themeColor: '#f7f5ef',
 };
 
 export const metadata: Metadata = {

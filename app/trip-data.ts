@@ -36,6 +36,7 @@ export type TripDay = {
 };
 
 export type DecisionOption = {
+  links?: {label:string;url:string}[];
   name: string;
   label?: string;
   description: string;

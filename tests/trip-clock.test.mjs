@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { trip } from '../app/trip-data.ts';
+import { trip } from '../app/trip-data-v11.ts';
 import { getBudapestClock, getUpcomingStops, getDefaultDay, getStopDateLabel } from '../app/trip-clock.ts';
 
 test('before the trip, Thursday and the arrival are first', () => {
@@ -23,10 +23,10 @@ test('an after-midnight return keeps its itinerary day but uses the next date', 
   assert.equal(next.dateKey, '2026-09-19');
   assert.equal(getStopDateLabel(next, now), 'Today');
 });
-test('Sparty after-party remains next at 01:00 Sunday Budapest time', () => {
-  const now = new Date('2026-09-19T23:00:00Z');
+test('rooftop return remains part of Saturday after midnight', () => {
+  const now = new Date('2026-09-19T22:30:00Z');
   const next = getUpcomingStops(trip.days, now)[0];
-  assert.equal(next.item.title, 'After Sparty');
+  assert.equal(next.item.title, 'Return to apartment');
   assert.equal(next.dateKey, '2026-09-20');
   assert.equal(getDefaultDay(trip.days, now).day, 3);
 });
